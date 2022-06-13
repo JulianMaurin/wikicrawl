@@ -1,0 +1,33 @@
+FROM python:3.9.11-alpine as build
+    RUN apk add curl make
+
+    ARG UID=5000
+    ARG GID=5000
+    RUN addgroup -g ${GID} wikicrawl && adduser -S wikicrawl -u ${UID} -G wikicrawl
+    USER wikicrawl
+    WORKDIR /home/wikicrawl/dev
+
+    ENV PATH="/home/wikicrawl/.local/bin:/home/wikicrawl/.poetry/bin:${PATH}"
+    RUN python -m pip --disable-pip-version-check install --upgrade --user pip 
+
+    ENV POETRY_VERSION=1.1.13
+    RUN curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py | python -
+
+
+FROM build as tests
+    ADD --chown=wikicrawl:wikicrawl https://github.com/ufoscout/docker-compose-wait/releases/download/2.9.0/wait /home/wikicrawl/wait
+    RUN chmod +x /home/wikicrawl/wait
+
+    ENV PYTHONPATH="/home/wikicrawl/dev/src/core:${PYTHONPATH}"
+    ENV PYTHONPATH="/home/wikicrawl/dev/src/database:${PYTHONPATH}"
+    ENV PYTHONPATH="/home/wikicrawl/dev/src/crawl:${PYTHONPATH}"
+    ENV PYTHONPATH="/home/wikicrawl/dev/src/workers:${PYTHONPATH}"
+    ENV PYTHONPATH="/home/wikicrawl/dev/src/stub:${PYTHONPATH}"
+
+    COPY --chown=wikicrawl:wikicrawl ./.tests/requirements /tmp/wikicrawl/requirements
+
+    RUN python -m pip install --user -r /tmp/wikicrawl/requirements/core.txt
+    RUN python -m pip install --user -r /tmp/wikicrawl/requirements/crawl.txt
+    RUN python -m pip install --user -r /tmp/wikicrawl/requirements/database.txt
+    RUN python -m pip install --user -r /tmp/wikicrawl/requirements/workers.txt
+    RUN python -m pip install --user -r /tmp/wikicrawl/requirements/stub.txt

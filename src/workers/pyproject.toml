@@ -1,0 +1,36 @@
+[tool.poetry]
+name = "wikicrawl-workers"
+version = "0.1.0"
+description = "Wikicrawl celery workers."
+authors = ["JulianMaurin <julian.maurin.dev@proton.me>"]
+license = "Apache License 2.0"
+packages = [
+    { include = "wikicrawl" },
+]
+
+[tool.poetry.dependencies]
+python = "^3.9"
+environs = "^9.5.0"
+celery = {extras = ["amqp"], version = "^5.2.6"}
+wikicrawl-core = "^0.1.0"
+wikicrawl-crawl = "^0.1.0"
+wikicrawl-database = "^0.1.0"
+redis = "^4.3.1"
+celery_once = "^3.0.1"
+statsd = "^3.3.0"
+celery-batches = "^0.7"
+
+
+[tool.poetry.dev-dependencies]
+wikicrawl-core = { path = "../core/", develop = true }
+wikicrawl-crawl = { path = "../crawl/", develop = true }
+wikicrawl-database = { path = "../database/", develop = true }
+pre-commit = "^2.19.0"
+pytest = "^7.1.2"
+pytest-cov = "^3.0.0"
+coverage = {extras = ["toml"], version = "^6.4"}
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+

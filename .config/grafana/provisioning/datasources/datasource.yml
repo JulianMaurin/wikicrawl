@@ -1,0 +1,28 @@
+---
+apiVersion: 1
+
+datasources:
+  - name: Loki
+    type: loki
+    access: proxy
+    url: http://logging-service:3100
+    jsonData:
+      maxLines: 1000
+  - name: Prometheus
+    type: prometheus
+    access: proxy
+    url: http://metrics-scrapper-service:9090
+  - name: Neo4j
+    type: kniepdennis-neo4j-datasource
+    jsonData:
+      url: neo4j://database-service:7687
+      database: ""
+      username: "neo4j"
+    secureJsonData:
+      password: "wikicrawl"
+  - name: Graphite
+    type: graphite
+    access: proxy
+    url: http://metrics-service:80
+    jsonData:
+      graphiteVersion: "1.1"

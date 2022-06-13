@@ -1,0 +1,22 @@
+~/wait
+echo ""
+echo "CREATE DATABASE CONSTRAINTS"
+
+PYTHON_SETUP_LOGGER="from wikicrawl.core.logging import setup; setup()"
+PYTHON_CREATE_DATABASE_CONSTRAINTE="from wikicrawl.database.dao import create_constraints; create_constraints()"
+python -c "$PYTHON_SETUP_LOGGER;$PYTHON_CREATE_DATABASE_CONSTRAINTE"
+
+
+STARTUP_CELERY_APP="${STARTUP_CELERY_APP:=wikicrawl.workers}"
+STARTUP_CELERY_CONCURRENCY="${STARTUP_CELERY_CONCURRENCY:=2}"
+LOGGING_LEVEL="${LOGGING_LEVEL:=INFO}"
+STARTUP_CELERY_HOSTNAME="{$STARTUP_CELERY_HOSTNAME:=wikicrawl-worker@%%h}"
+
+celery \
+     --app=$STARTUP_CELERY_APP \
+    worker \
+    --task-events \
+    --queues=$STARTUP_CELERY_QUEUES \
+    --concurrency=$STARTUP_CELERY_CONCURRENCY \
+    --hostname=$STARTUP_CELERY_HOSTNAME \
+    --loglevel=$LOGGING_LEVEL

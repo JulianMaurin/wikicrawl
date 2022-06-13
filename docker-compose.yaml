@@ -1,0 +1,106 @@
+---
+version: "3.9"
+
+services:
+  wikipedia-stub-service:
+    image: wiremock/wiremock:2.33.2-alpine
+    command: --port 80
+    ports:
+      - 8000:80
+    volumes:
+      - ./.stub:/home/wiremock/
+  database-service:
+    image: neo4j:4.4.7-community
+    environment:
+      - NEO4J_AUTH=neo4j/wikicrawl
+    ports:
+      - 8005:7474
+      - 8006:7687
+    volumes:
+      - ./.databases/neo4j/data:/data
+      - ./.databases/neo4j/logs:/logs
+  broker-service:
+    image: rabbitmq:3.9.20-management-alpine
+    environment:
+      - RABBITMQ_DEFAULT_USER=admin
+      - RABBITMQ_DEFAULT_PASS=admin
+    ports:
+      - 8010:15672
+    volumes:
+      - "./.config/rabbitmq:/etc/rabbitmq"
+  cache-service:
+    image: "redis:7.0.0-alpine"
+
+  monitoring-service:
+    image: grafana/grafana:8.5.4
+    environment:
+      - GF_AUTH_DISABLE_LOGIN_FORM=true
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
+      - GF_INSTALL_PLUGINS=kniepdennis-neo4j-datasource
+    volumes:
+      - ./.config/grafana/provisioning:/etc/grafana/provisioning
+    ports:
+      - "8015:3000"
+    depends_on:
+      - logging-service
+      - metrics-scrapper-service
+      - metrics-service
+  logging-service:
+    image: grafana/loki:2.5.0
+    command: -config.file=/etc/loki/config.yaml
+    volumes:
+      - ./.config/loki:/etc/loki
+  metrics-scrapper-service:
+    image: prom/prometheus:v2.36.0
+    ports:
+      - "8020:9090"
+    volumes:
+      - ./.config/prometheus:/etc/prometheus/
+    command:
+      - '--config.file=/etc/prometheus/config.yaml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--web.enable-lifecycle'
+  metrics-service:
+    image: graphiteapp/graphite-statsd:1.1.10-1
+    ports:
+      - "8025:80"
+      - "8126:8126"
+      - "8125:8125/udp"
+
+  workers-service:
+    build:
+      context: .
+      target: dockercompose
+    command: ["/bin/ash", "-c", "/home/wikicrawl/startup"]
+    environment:
+      - WAIT_HOSTS=cache-service:6379,broker-service:5672,database-service:7687,logging-service:3100,metrics-service:2003,wikipedia-stub-service:80
+      - STARTUP_CELERY_QUEUES=crawling-queue,recording-queue
+      - STARTUP_CELERY_CONCURRENCY=4
+      - WORKER_QUEUE_CRAWL_RATE_LIMIT=1/s
+      - WORKER_QUEUE_CRAWL_MAX_LENGTH=100000
+      - WORKER_QUEUE_RECORD_BATCH_SIZE=10
+      - WORKER_QUEUE_RECORD_BATCH_TIMEOUT=5
+      - WORKER_QUEUE_RECORD_MAX_LENGTH=250000
+      - WORKER_BROKER_URL=amqp://admin:admin@broker-service:5672/
+      - WORKER_RESULT_BACKEND=redis://cache-service:6379/0
+      - WORKER_STATSD_HOST=metrics-service
+      - WORKER_STATSD_PORT=8125
+      - DATABASE_USER=neo4j
+      - DATABASE_PASSWORD=wikicrawl
+      - DATABASE_URL=bolt://database-service
+      - WORKER_TASK_CACHE_URL=redis://cache-service:6379/0
+      - WORKER_TASK_CACHE_TIMEOUT=900
+      - LOGGING_SERVICE=logging-service
+      - LOGGING_ENGINES=LOKI
+      - LOGGING_LEVEL=DEBUG
+      - WIKI_BASE_URL=http://wikipedia-stub-service
+      - CRAWL_SILENT_HTTP_STATUS_CODES=404
+    depends_on:
+      - wikipedia-stub-service
+      - database-service
+      - broker-service
+      - cache-service
+      - monitoring-service

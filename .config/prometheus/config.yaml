@@ -1,0 +1,13 @@
+---
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: "rabbitmq"
+    metrics_path: /metrics/per-object
+    static_configs:
+      - targets: ['broker-service:15692']
+
+
+remote_write:
+  - url: "http://monitoring-service:3000"
