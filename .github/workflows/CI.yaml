@@ -11,10 +11,17 @@ jobs:
         run: sudo chown -R 5000:5000 ./
       - name: unit tests
         run: make ci UID=5000 GID=5000
-      - name: Publish Test Report
-        uses: mikepenz/action-junit-report@v3
+      - name: Publish test report
+        uses: dorny/test-reporter@v1
         if: always()
         with:
-          report_paths: '.tests/report.xml'
-      - name: Upload coverage reports to Codecov with GitHub Action
+          name: unittest report
+          path: .tests/junit.xml
+          reporter: java-junit
+      - name: Publish codcov
         uses: codecov/codecov-action@v3
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          fail_ci_if_error: true
+          files: .tests/coverage.xml
+          verbose: true
