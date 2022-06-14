@@ -1,3 +1,6 @@
+![badge](https://github.com/JulianMaurin/wikicrawl/actions/workflows/CI.yaml/badge.svg)
+[![codecov](https://codecov.io/gh/JulianMaurin/wikicrawl/branch/dev/graph/badge.svg?token=8I8M0B7G5D)](https://codecov.io/gh/JulianMaurin/wikicrawl)
+
 # Wikicrawl
 
 Wikicrawl crawls pages from [wikipedia.org](https://wikipedia.org) and records the references between page parsing the `href` from html link tags to a graph database.

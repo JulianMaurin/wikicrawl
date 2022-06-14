@@ -16,7 +16,7 @@ exclude_dirs = [
 ]
 
 [tool.pytest.ini_options]
-addopts = "--cov=. --junitxml=./.tests/report.xml --durations=5"
+addopts = "--cov=. --cov-report=xml:./.tests/coverage.xml --junitxml=./.tests/junit.xml --durations=5"
 asyncio_mode="auto"
 
 [tool.coverage.run]

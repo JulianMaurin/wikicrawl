@@ -16,7 +16,12 @@ jobs:
         if: always()
         with:
           name: unittest report
-          path: .tests/report.xml
+          path: .tests/junit.xml
           reporter: java-junit
-      - name: Upload coverage reports to Codecov with GitHub Action
+      - name: Publish codcov
         uses: codecov/codecov-action@v3
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          fail_ci_if_error: true
+          files: .tests/coverage.xml
+          verbose: true
