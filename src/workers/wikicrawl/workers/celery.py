@@ -1,5 +1,6 @@
 import celery
 from kombu import Queue
+
 from wikicrawl.core import logging
 from wikicrawl.workers import settings
 
@@ -29,7 +30,10 @@ app.conf.task_routes = {
 }
 app.conf.ONCE = {
     "backend": "celery_once.backends.Redis",
-    "settings": {"url": settings.WORKER_TASK_CACHE_URL, "default_timeout": settings.WORKER_TASK_CACHE_TIMEOUT},
+    "settings": {
+        "url": settings.WORKER_TASK_CACHE_URL,
+        "default_timeout": settings.WORKER_TASK_CACHE_TIMEOUT,
+    },
 }
 
 

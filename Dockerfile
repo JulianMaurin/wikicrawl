@@ -16,7 +16,6 @@ FROM python:3.9.11-alpine as prod
         /tmp/wikicrawl/wikicrawl_database-0.1.0-py3-none-any.whl \
         /tmp/wikicrawl/wikicrawl_workers-0.1.0-py3-none-any.whl
 
-
 FROM prod as dockercompose
 
     COPY --chown=wikicrawl:wikicrawl ./scripts/startup /home/wikicrawl/startup
