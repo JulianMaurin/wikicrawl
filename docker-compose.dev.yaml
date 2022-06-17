@@ -2,12 +2,12 @@
 version: "3.9"
 
 services:
-  test-database-service:
+  test.neo4j.local:
     image: neo4j:4.4.7-community
     environment:
       - NEO4J_AUTH=neo4j/wikicrawl
 
-  redis-service:
+  test.redis.local:
     image: "redis:alpine"
 
   tests:
@@ -19,12 +19,12 @@ services:
     environment:
       - DATABASE_USER=neo4j
       - DATABASE_PASSWORD=wikicrawl
-      - DATABASE_URL=bolt://test-database-service
-      - WAIT_HOSTS=test-database-service:7687
+      - DATABASE_URL=bolt://test.neo4j.local
+      - WAIT_HOSTS=test.neo4j.local:7687
       - WAIT_TIMEOUT=120
       - WAIT_SLEEP_INTERVAL=6
     depends_on:
-      - test-database-service
+      - test.neo4j.local
     volumes:
       - ./:/home/wikicrawl/dev
 
@@ -38,17 +38,18 @@ services:
     volumes:
       - ./:/home/wikicrawl/dev
 
-  stub-generator:
+  stub-data-generator:
+    image: stub-data-generator:local
     build:
       context: .
       dockerfile: Dockerfile.stub
     environment:
-      - REDIS_HOST=redis-service
+      - REDIS_HOST=test.redis.local
       - STUB_OUTPUT_DIRECTORY=/home/wikicrawl/output
       - LOGGING_ENGINES=STREAM
-      - WIKI_BASE_URL=https://en.wikipedia.org
+      - WIKI_DOMAIN=https://en.wikipedia.org
       - CRAWL_SILENT_HTTP_STATUS_CODES=429
     depends_on:
-      - redis-service
+      - test.redis.local
     volumes:
       - ./.stub:/home/wikicrawl/output

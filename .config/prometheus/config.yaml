@@ -6,8 +6,8 @@ scrape_configs:
   - job_name: "rabbitmq"
     metrics_path: /metrics/per-object
     static_configs:
-      - targets: ['broker-service:15692']
+      - targets: ['rmq.local:15692']
 
 
 remote_write:
-  - url: "http://monitoring-service:3000"
+  - url: "http://grafana.local:3000"

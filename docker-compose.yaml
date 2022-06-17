@@ -2,14 +2,14 @@
 version: "3.9"
 
 services:
-  wikipedia-stub-service:
+  en.wikipedia.stub.local:
     image: wiremock/wiremock:2.33.2-alpine
     command: --port 80
     ports:
       - 8000:80
     volumes:
       - ./.stub:/home/wiremock/
-  database-service:
+  neo4j.local:
     image: neo4j:4.4.7-community
     environment:
       - NEO4J_AUTH=neo4j/wikicrawl
@@ -19,7 +19,7 @@ services:
     volumes:
       - ./.databases/neo4j/data:/data
       - ./.databases/neo4j/logs:/logs
-  broker-service:
+  rmq.local:
     image: rabbitmq:3.9.20-management-alpine
     environment:
       - RABBITMQ_DEFAULT_USER=admin
@@ -28,10 +28,10 @@ services:
       - 8010:15672
     volumes:
       - "./.config/rabbitmq:/etc/rabbitmq"
-  cache-service:
+  redis.local:
     image: "redis:7.0.0-alpine"
 
-  monitoring-service:
+  grafana.local:
     image: grafana/grafana:8.5.4
     environment:
       - GF_AUTH_DISABLE_LOGIN_FORM=true
@@ -43,15 +43,15 @@ services:
     ports:
       - "8015:3000"
     depends_on:
-      - logging-service
-      - metrics-scrapper-service
-      - metrics-service
-  logging-service:
+      - loki.local
+      - prometheus.local
+      - graphite.local
+  loki.local:
     image: grafana/loki:2.5.0
     command: -config.file=/etc/loki/config.yaml
     volumes:
       - ./.config/loki:/etc/loki
-  metrics-scrapper-service:
+  prometheus.local:
     image: prom/prometheus:v2.36.0
     ports:
       - "8020:9090"
@@ -63,20 +63,20 @@ services:
       - '--web.console.libraries=/etc/prometheus/console_libraries'
       - '--web.console.templates=/etc/prometheus/consoles'
       - '--web.enable-lifecycle'
-  metrics-service:
+  graphite.local:
     image: graphiteapp/graphite-statsd:1.1.10-1
     ports:
       - "8025:80"
       - "8126:8126"
       - "8125:8125/udp"
 
-  workers-service:
+  task-queue:
     build:
       context: .
       target: dockercompose
     command: ["/bin/ash", "-c", "/home/wikicrawl/startup"]
     environment:
-      - WAIT_HOSTS=cache-service:6379,broker-service:5672,database-service:7687,logging-service:3100,metrics-service:2003,wikipedia-stub-service:80
+      - WAIT_HOSTS=redis.local:6379,rmq.local:5672,neo4j.local:7687,loki.local:3100,graphite.local:2003,en.wikipedia.stub.local:80
       - STARTUP_CELERY_QUEUES=crawling-queue,recording-queue
       - STARTUP_CELERY_CONCURRENCY=4
       - WORKER_QUEUE_CRAWL_RATE_LIMIT=1/s
@@ -84,23 +84,23 @@ services:
       - WORKER_QUEUE_RECORD_BATCH_SIZE=10
       - WORKER_QUEUE_RECORD_BATCH_TIMEOUT=5
       - WORKER_QUEUE_RECORD_MAX_LENGTH=250000
-      - WORKER_BROKER_URL=amqp://admin:admin@broker-service:5672/
-      - WORKER_RESULT_BACKEND=redis://cache-service:6379/0
-      - WORKER_STATSD_HOST=metrics-service
+      - WORKER_BROKER_URL=amqp://admin:admin@rmq.local:5672/
+      - WORKER_RESULT_BACKEND=redis://redis.local:6379/0
+      - WORKER_STATSD_HOST=graphite.local
       - WORKER_STATSD_PORT=8125
       - DATABASE_USER=neo4j
       - DATABASE_PASSWORD=wikicrawl
-      - DATABASE_URL=bolt://database-service
-      - WORKER_TASK_CACHE_URL=redis://cache-service:6379/0
+      - DATABASE_URL=bolt://neo4j.local
+      - WORKER_TASK_CACHE_URL=redis://redis.local:6379/0
       - WORKER_TASK_CACHE_TIMEOUT=900
-      - LOGGING_SERVICE=logging-service
+      - LOGGING_SERVICE=loki.local
       - LOGGING_ENGINES=LOKI
       - LOGGING_LEVEL=DEBUG
-      - WIKI_BASE_URL=http://wikipedia-stub-service
+      - WIKI_DOMAIN=http://en.wikipedia.stub.local
       - CRAWL_SILENT_HTTP_STATUS_CODES=404
     depends_on:
-      - wikipedia-stub-service
-      - database-service
-      - broker-service
-      - cache-service
-      - monitoring-service
+      - en.wikipedia.stub.local
+      - neo4j.local
+      - rmq.local
+      - redis.local
+      - grafana.local

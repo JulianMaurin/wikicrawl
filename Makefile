@@ -34,19 +34,19 @@ crawl-random-stub:  # Push crawling task with random page name from stub
 	$(DOCKER_COMPOSE) run \
 		-e LOGGING_ENGINES=STREAM,LOKI \
 		-e LOGGING_LEVEL=DEBUG \
-		workers-service \
+		task-queue \
 		python -c $(CRAWL_RANDOM_PAGE_STUB)
 
 
 crawl-random-wikipedia:  ## Push crawling task with random page name using the wikipedia feature "Special:Random"
 	$(DOCKER_COMPOSE) run \
 		-e LOGGING_ENGINES=STREAM,LOKI \
-		workers-service \
+		task-queue \
 		python -c "from wikicrawl.core.logging import setup; setup(); from wikicrawl.workers import crawl; crawl.delay('Special:Random')"
 
 
 workers-sh:  ## Run workers shell
-	$(DOCKER_COMPOSE) run workers-service /bin/ash
+	$(DOCKER_COMPOSE) run task-queue /bin/ash
 
 
 buildup:  ## Down + Build + Up

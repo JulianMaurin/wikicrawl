@@ -5,17 +5,17 @@ datasources:
   - name: Loki
     type: loki
     access: proxy
-    url: http://logging-service:3100
+    url: http://loki.local:3100
     jsonData:
       maxLines: 1000
   - name: Prometheus
     type: prometheus
     access: proxy
-    url: http://metrics-scrapper-service:9090
+    url: http://prometheus.local:9090
   - name: Neo4j
     type: kniepdennis-neo4j-datasource
     jsonData:
-      url: neo4j://database-service:7687
+      url: neo4j://neo4j.local:7687
       database: ""
       username: "neo4j"
     secureJsonData:
@@ -23,6 +23,6 @@ datasources:
   - name: Graphite
     type: graphite
     access: proxy
-    url: http://metrics-service:80
+    url: http://graphite.local:80
     jsonData:
       graphiteVersion: "1.1"
