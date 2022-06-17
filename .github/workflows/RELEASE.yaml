@@ -1,6 +1,8 @@
 ---
-name: Wikicrawl CI
-on: [pull_request]
+name: Wikicrawl Release
+on:
+  push:
+    branches: [dev]
 jobs:
   tests:
     runs-on: ubuntu-latest
