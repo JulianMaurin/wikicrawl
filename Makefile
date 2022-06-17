@@ -2,7 +2,7 @@
 # MAKEFILE
 #----------------------------------------------------------------
 
-# MAKEFLAGS += --silent
+MAKEFLAGS += --silent
 UID := $(shell id -u)
 GID := $(shell id -g)
 DOCKER_COMPOSE ?= docker-compose
@@ -62,22 +62,40 @@ downup:
 # STUB
 #----------------------------------------------------------------
 
-GENERATE_STUB_ENTRYPOINT := Rock
-GENERATE_STUB_PAGE_COUNT := 50
+GENERATE_STUB_DATA_DOCKER_IMAGE_ID = $(shell docker images -q stub-data-generator:local)
+GENERATE_STUB_DATA_ENTRYPOINT := Rock
+GENERATE_STUB_DATA_PAGE_COUNT := 50
 
-generate-stub: build-wheels-dc
+generate-stub-data: generate-stub-data-image-check
 	mkdir -p ./.stub/__files ./.stub/mappings
-	@echo "Generate stub (entrypoint: $(GENERATE_STUB_ENTRYPOINT), page count: $(GENERATE_STUB_PAGE_COUNT))"
+	@echo "Generate stub (entrypoint: $(GENERATE_STUB_DATA_ENTRYPOINT), page count: $(GENERATE_STUB_DATA_PAGE_COUNT))"
+	$(DOCKER_COMPOSE) -f docker-compose.dev.yaml run \
+		--user="$(UID):$(GID)" \
+		-e LOGGING_ENGINES=STREAM \
+		stub-data-generator \
+		python -m wikicrawl.stub generate --entry-point=$(GENERATE_STUB_DATA_ENTRYPOINT) --pages-count=$(GENERATE_STUB_DATA_PAGE_COUNT)
+
+
+generate-stub-data-sh: generate-stub-data-image-check
+	mkdir -p ./.stub/__files ./.stub/mappings
+	$(DOCKER_COMPOSE) -f docker-compose.dev.yaml run \
+		--user="$(UID):$(GID)" \
+		-e LOGGING_ENGINES=STREAM \
+		stub-data-generator \
+		/bin/sh
+
+
+generate-stub-data-image-build: build-wheels-dc
 	$(DOCKER_COMPOSE) -f docker-compose.dev.yaml down --remove-orphans
 	$(DOCKER_COMPOSE) -f docker-compose.dev.yaml build \
 		--build-arg UID=$(UID) \
 		--build-arg GID=$(GID) \
-		stub-generator
-	$(DOCKER_COMPOSE) -f docker-compose.dev.yaml run \
-		--user="$(UID):$(GID)" \
-		-e LOGGING_ENGINES=STREAM \
-		stub-generator \
-		python -m wikicrawl.stub generate --entry-point=$(GENERATE_STUB_ENTRYPOINT) --pages-count=$(GENERATE_STUB_PAGE_COUNT)
+		stub-data-generator
+
+generate-stub-data-image-check:
+	if [ -z "$(GENERATE_STUB_DATA_DOCKER_IMAGE_ID)" ]; then \
+		echo "Docker image not built. Run:\n\tmake generate-stub-data-image-build\n" && exit 1; \
+	fi
 
 #----------------------------------------------------------------
 # BUILD
