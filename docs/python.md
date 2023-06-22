@@ -10,7 +10,7 @@ Packages build and dependencies management is powered by [Poetry](https://python
 
 ## Tests
 
-The test suite is based on [Pytest](https://docs.pytest.org/en/7.1.x/). Running the test locally is possible, but as some tests are relying on the database the recommended usage is to run them using docker-compose. Running [in memory database, as SQLite](https://www.sqlite.org/inmemorydb.html#:~:text=An%20SQLite%20database%20is%20normally,filename%20%22%3Amemory%3A%22.), was not an option due to the usage of the [graph](/docs/ubiquitousLanguage.md#graph)
+The test suite is based on [Pytest](https://docs.pytest.org/en/7.1.x/). Running the test locally is possible, but as some tests are relying on the database the recommended usage is to run them using docker-compose. Running [in memory database, as SQLite](https://www.sqlite.org/inmemorydb.html#:~:text=An%20SQLite%20database%20is%20normally,filename%20%22%3Amemory%3A%22.), was not an option due to the usage of the [graph](/docs/ubiquitousLanguage.md#graph) database.
 
 This way the code will be executed on a python alpine image with dependencies installed (see: [Dockerfile](/Dockerfile.dev)).
 
